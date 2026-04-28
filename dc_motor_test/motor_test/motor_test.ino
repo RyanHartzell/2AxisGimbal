@@ -33,6 +33,9 @@ delay(2000);
 digitalWrite(pin1, 1);
 digitalWrite(pin2, 1);
 delay(2000);
+//turn right
+digitalWrite(pin1, 0);
+digitalWrite(pin2, 1);
 //speed up
 analogWrite(pwmPin, 128);
 delay(2000);
