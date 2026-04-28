@@ -23,10 +23,10 @@ directionState = !directionState;
 analogWrite(pwmPin, 50); // 0-255 range
 //turn left
 digitalWrite(pin1, 1);
-digitalWrite(pin2, 1);
+digitalWrite(pin2, 0);
 delay(2000);
 //turn right
-digitalWrite(pin1, 1);
+digitalWrite(pin1, 0);
 digitalWrite(pin2, 1);
 delay(2000);
 //stop
