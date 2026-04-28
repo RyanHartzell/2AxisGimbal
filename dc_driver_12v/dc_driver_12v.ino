@@ -43,7 +43,12 @@ void loop()
   Serial.print("Pulse:");
   Serial.println(duration);
   duration = 0;
-  delay(100);
+  //delay(100);
+
+  digitalWrite(encoder0pinA, HIGH);
+  delay(4000);
+  digitalWrite(pulsePin, LOW);
+  delay(4000);
 }
 
 void EncoderInit()
