@@ -30,8 +30,8 @@ digitalWrite(pin1, 0);
 digitalWrite(pin2, 1);
 delay(2000);
 //stop
-digitalWrite(pin1, 0);
-digitalWrite(pin2, 0);
+digitalWrite(pin1, 1);
+digitalWrite(pin2, 1);
 delay(2000);
 //speed up
 analogWrite(pwmPin, 128);
