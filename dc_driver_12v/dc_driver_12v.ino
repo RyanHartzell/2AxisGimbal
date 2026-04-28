@@ -12,16 +12,19 @@ void setup()
   Serial.begin(57600);//Initialize the serial port
   EncoderInit();//Initialize the module
 
+  /*
   //// TEST
   pinMode(encoder0pinA, OUTPUT);
   pinMode(encoder0pinB, OUTPUT);
   ////
+  */
 
-  duration = 10;
+
 }
 
 void loop()
 {
+  /*
   //// TEST
   digitalWrite(encoder0pinA, LOW);
   delay(100);
@@ -35,18 +38,19 @@ void loop()
   digitalWrite(encoder0pinA, HIGH);
   delay(1000);
   ////
+  */
   
-  // Serial.print("Pulse:");
-  // Serial.println(duration);
-  // duration = 0;
-  // delay(1000);
+  Serial.print("Pulse:");
+  Serial.println(duration);
+  duration = 0;
+  delay(100);
 }
 
 void EncoderInit()
 {
   Direction = true;//default -> Forward
   pinMode(encoder0pinB,INPUT);
-  attachInterrupt(digitalPinToInterrupt(encoder0pinA), wheelSpeed, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(2), wheelSpeed, CHANGE);
 }
 
 void wheelSpeed()
