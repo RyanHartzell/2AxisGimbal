@@ -2,6 +2,7 @@
 //The sample code for driving one way motor encoder
 const byte encoder0pinA = 2;//A pin -> the interrupt pin 2
 const byte encoder0pinB = 4;//B pin -> the digital pin 4
+const byte encoder0pinBpwm = 4;
 byte encoder0PinALast;
 int duration;//the number of the pulses
 boolean Direction;//the rotation direction
@@ -12,12 +13,12 @@ void setup()
   Serial.begin(57600);//Initialize the serial port
   EncoderInit();//Initialize the module
 
-  /*
+  /**/
   //// TEST
-  pinMode(encoder0pinA, OUTPUT);
-  pinMode(encoder0pinB, OUTPUT);
+  //pinMode(encoder0pinA, INPUT);
+  //pinMode(encoder0pinB, INPUT);
   ////
-  */
+  
 
 
 }
@@ -40,14 +41,16 @@ void loop()
   ////
   */
   
+  /*
   Serial.print("Pulse:");
   Serial.println(duration);
   duration = 0;
   //delay(100);
+  */
 
   digitalWrite(encoder0pinA, HIGH);
   delay(4000);
-  digitalWrite(pulsePin, LOW);
+  digitalWrite(encoder0pinA, LOW);
   delay(4000);
 }
 
