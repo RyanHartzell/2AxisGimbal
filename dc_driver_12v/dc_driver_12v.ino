@@ -1,6 +1,6 @@
 
 //The sample code for driving one way motor encoder
-const byte encoder0pinA = 2;//A pin -> the interrupt pin 0
+const byte encoder0pinA = 2;//A pin -> the interrupt pin 2
 const byte encoder0pinB = 4;//B pin -> the digital pin 4
 byte encoder0PinALast;
 int duration;//the number of the pulses
@@ -16,6 +16,8 @@ void setup()
   pinMode(encoder0pinA, OUTPUT);
   pinMode(encoder0pinB, OUTPUT);
   ////
+
+  duration = 10;
 }
 
 void loop()
@@ -44,7 +46,7 @@ void EncoderInit()
 {
   Direction = true;//default -> Forward
   pinMode(encoder0pinB,INPUT);
-  attachInterrupt(0, wheelSpeed, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoder0pinA), wheelSpeed, CHANGE);
 }
 
 void wheelSpeed()
