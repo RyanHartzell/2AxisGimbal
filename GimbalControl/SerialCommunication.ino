@@ -1,7 +1,3 @@
-const byte numChars = 32;
-char msg[numChars];   // an array to store the received data
-boolean newData = false;
-
 /*
   Read in several characters from serial
 */

@@ -1,26 +1,24 @@
-boolean testDemos = false;
-
 void testAll() {
 
   // read serial input in a loop and print received messages
   testSerial();
 
   // run each motor demo code once
-  if testDemos == true {
+  if (testDemos == false) {
     
     // servo demo
-    servoDemo();
-    delay(2000);
+    // servoDemo();
+    // delay(2000);
     
     // DC motor demo
     // TODO
-    delay(2000);
+    //delay(2000);
 
     // test simple scan
     simpleScan();
     delay(5000);
   }
-  testDemos = false;
+  testDemos = true;
 }
 
 void testSerial() {
@@ -39,19 +37,25 @@ void servoDemo() {
     Go 30 degrees from left
     Go back to center
   */
-  Servo1.write(0);
+
+  /*
+  servoMoveTo() takes angle inputs [-90, 90]
+  servo.write() takes angle inputs [0, 180]
+  */
+
+  servoMoveTo(-90);
   delay(1000);
 
-  Servo1.write(90);
+  servoMoveTo(0);
   delay(1000);
 
-  Servo1.write(180);
+  servoMoveTo(90);
   delay(1000);
 
-  Servo1.write(30);
+  servoMoveTo(-30);
   delay(1000);
 
-  Servo1.write(90);
+  servoMoveTo(0);
 }
 
 // TODO: DC motor test demo

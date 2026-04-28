@@ -14,20 +14,15 @@ Input commands:
   90 is all the way to the right
 */
 
-#include <Servo.h>
-
-int servoPin = 3;
-Servo Servo1;
-
 /*
   Moves the servo motor to the specified degree
   @param degree in range [-90, 90]
 */
-void servoMoveTo(degree) {
+void servoMoveTo(int degree) {
 
   // adjust input degree from [-90, 90] to [0, 180]
-  degree += 90
-  degree = degree % 180 // wrap around if needed
+  degree += 90;
+  degree = degree % 180; // wrap around if needed
 
   // send the command to the servo
   Servo1.write(degree);
