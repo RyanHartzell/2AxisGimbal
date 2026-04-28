@@ -50,7 +50,7 @@ void EncoderInit()
 {
   Direction = true;//default -> Forward
   pinMode(encoder0pinB,INPUT);
-  attachInterrupt(digitalPinToInterrupt(2), wheelSpeed, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(2), wheelSpeed, CHANGE); //interrupt port 0 connected to digital pin 2
 }
 
 void wheelSpeed()
