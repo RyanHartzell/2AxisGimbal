@@ -5,7 +5,7 @@ const byte encoder0pinB = 4;//B pin -> the digital pin 4
 const int forwardPin = 8;
 const int backwardPin = 12; 
 int delay = 2000;
-const int speedPin = 11;
+const int pwmPin = 10;
 
 int position = 0;
 long prevT = 0;
@@ -38,11 +38,11 @@ void driveMotor(int power, bool forward)
       moveForward();
       if(dutyCycle >= 100) 
       {
-        analogWrite(speedPin, 255);
+        analogWrite(pwmPin, 255);
       }
       else
       {
-        analogWrite(speedPin, (int) sendValue); //modulate reverse pin to go forward
+        analogWrite(pwmPin, (int) sendValue); //modulate reverse pin to go forward
       }
     
     }
@@ -51,11 +51,11 @@ void driveMotor(int power, bool forward)
       moveBackward();
       if(dutyCycle >= 100 
       {
-        analogWrite(speedPin, 255);
+        analogWrite(pwmPin, 255);
       }
       else
       {
-        analogWrite(speedPin, (int) sendValue); //modulate forward pin to go backward
+        analogWrite(pwmPin, (int) sendValue); //modulate forward pin to go backward
       }
     }
   }
@@ -66,7 +66,7 @@ void stopMotors()
     //brake motors
     digitalWrite(forwardPin, HIGH);
     digitalWrite(backwardPin, HIGH);
-    analogWrite(speedPin, 0);
+    analogWrite(pwmPin, 0);
 }
 
 void moveForward()
@@ -113,19 +113,19 @@ void loop() {
   float ki = 0;
 
   //time difference
-  long currentT = micros();
+  long currT = micros();
 
   float deltaT = ((float)(currT-prevT))/1.0e6; //microsecond precision
   prevT = currT;
 
   //error
-  int e = pos-target; //may need to switch sign on error term (target - position) if control isn't working
+  int e = position-target; //may need to switch sign on error term (target - position) if control isn't working
 
   //derivative
   float dedt = (e-eprev)/(deltaT); //finite difference approximation
 
   //integral
-  eintegral = eintegral + e*deltaT;
+  eintegral = eintegral + e*deltaT; //finite difference approximation
 
   //control signal
   float u = kp*e + kd*dedt + ki*eintegral;
@@ -142,7 +142,7 @@ void loop() {
   }
 
   //drive the motor
-  driveMotor(int pwr, bool forward);
+  driveMotor(pwr, forward);
 
   //store previous error
   eprev = e;

@@ -109,19 +109,19 @@ void loop()
   float ki = 0;
 
   //time difference
-  long currentT = micros();
+  long currT = micros();
 
   float deltaT = ((float)(currT-prevT))/1.0e6; //microsecond precision
   prevT = currT;
 
   //error
-  int e = pos-target; //may need to switch sign on error term (target - position) if control isn't working
+  int e = position-target; //may need to switch sign on error term (target - position) if control isn't working
 
   //derivative
   float dedt = (e-eprev)/(deltaT); //finite difference approximation
 
   //integral
-  eintegral = eintegral + e*deltaT;
+  eintegral = eintegral + e*deltaT; //finite difference approximation
 
   //control signal
   float u = kp*e + kd*dedt + ki*eintegral;
@@ -133,7 +133,7 @@ void loop()
     pwr = 255;
     dutyCycle = (pwr/255.0)*100.0;
   }
-  int dutyCycleI = (int) dutyCycle; //converting from pwm to duty cycle back to pwm. crimes against humanity
+  int dutyCycleI = (int) dutyCycle; //converting from pwm to duty cycle back to pwm. crime against humanity
 
   bool forward = true;
   if(u<0){
