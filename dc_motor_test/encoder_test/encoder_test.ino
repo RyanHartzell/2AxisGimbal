@@ -1,10 +1,10 @@
-const byte encoder0pinA = 2;//A pin -> the interrupt pin 2
-const byte encoder0pinB = 4;//B pin -> the digital pin 4
+const byte encoder1pinA = 2;//A pin -> the interrupt pin 2
+const byte encoder1pinB = 4;//B pin -> the digital pin 4
 
 //Motor drive L239D
 const int forwardPin = 8;
 const int backwardPin = 12; 
-int delay = 2000;
+//int delay = 2000;
 const int pwmPin = 10;
 
 int position = 0;
@@ -13,50 +13,34 @@ float eprev = 0;
 float eintegral = 0;
 
 void readEncoder(){
-  int b = digitalRead(encoder0pinB);
+  int b = digitalRead(encoder1pinB);
   if(b>0){
-    pos++;
+    position++;
   }
   else{
-    pos--;
+    position--;
   }
 }
 
 void driveMotor(int power, bool forward)
 {
-  if(dutyCycle <= 0)
+  if(power <= 0)
   {
     stopMotors();
   }
   else
   {
     //float sendValue = 255 * (float) dutyCycle/100.0;
-    float sendValue = power;
   
     if(forward)
     {
       moveForward();
-      if(dutyCycle >= 100) 
-      {
-        analogWrite(pwmPin, 255);
-      }
-      else
-      {
-        analogWrite(pwmPin, (int) sendValue); //modulate reverse pin to go forward
-      }
-    
+      analogWrite(pwmPin, power);
     }
     else 
     {
       moveBackward();
-      if(dutyCycle >= 100 
-      {
-        analogWrite(pwmPin, 255);
-      }
-      else
-      {
-        analogWrite(pwmPin, (int) sendValue); //modulate forward pin to go backward
-      }
+      analogWrite(pwmPin, power); //modulate forward pin to go backward
     }
   }
 }
@@ -86,9 +70,9 @@ void moveBackward()
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  pinMode(encoder0pinA, INPUT);
-  pinMode(encoder0pinB, INPUT);
-  attachInterrupt(digitalPinToInterrupt(encoder0pinA), readEncoder, RISING);
+  pinMode(encoder1pinA, INPUT);
+  pinMode(encoder1pinB, INPUT);
+  attachInterrupt(digitalPinToInterrupt(encoder1pinA), readEncoder, RISING);
 
   //Setup motor control
   pinMode(forwardPin, OUTPUT);
@@ -97,7 +81,8 @@ void setup() {
   //Configure to spin forward
   digitalWrite(forwardPin, HIGH);
   digitalWrite(backwardPin, LOW);
-  speed = 0;
+  int speed = 0;
+  analogWrite(pwmPin, speed);
 }
 
 void loop() {
@@ -149,7 +134,7 @@ void loop() {
 
   Serial.print(target);
   Serial.print(" ");
-  Serial.print(pos);
+  Serial.print(position);
   Serial.println();
 }
 

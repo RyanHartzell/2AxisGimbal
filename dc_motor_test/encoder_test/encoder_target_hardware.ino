@@ -2,6 +2,7 @@
 const byte encoder0pinA = 2;//A pin -> the interrupt pin 2
 const byte encoder0pinB = 4;//B pin -> the digital pin 4
 /* Attempt at code to drive a dc motor using DRV8231A H-Bridge*/
+/*
 const int forwardPin = 9; //HBridge IN1
 const int backwardPin = 11; //HBridge IN2
 const int delayTime = 2000;
@@ -151,4 +152,4 @@ void loop()
   Serial.print(pos);
   Serial.println();
 }
-
+*/
