@@ -86,15 +86,17 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  Serial.print(position);
-
   //target position -> 700 encoder ticks should give a one full rotation
   int target = 700;
-
+  
+  float diff = abs(target-position);
+  readEncoder();
+  // put your main code here, to run repeatedly:
+  //Serial.print(position);
+  
   //PID Constants
   float kp = 1;
-  float kd = 0.025;
+  float kd = 0;
   float ki = 0;
 
   //time difference
@@ -102,9 +104,9 @@ void loop() {
 
   float deltaT = ((float)(currT-prevT))/1.0e6; //microsecond precision
   prevT = currT;
-
+  readEncoder();
   //error
-  int e = position-target; //may need to switch sign on error term (target - position) if control isn't working
+  int e = target-position; //may need to switch sign on error term (target - position) if control isn't working
 
   //derivative
   float dedt = (e-eprev)/(deltaT); //finite difference approximation
@@ -136,5 +138,6 @@ void loop() {
   Serial.print(" ");
   Serial.print(position);
   Serial.println();
+
 }
 
