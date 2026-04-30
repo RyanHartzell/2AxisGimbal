@@ -11,6 +11,7 @@ int position = 0;
 long prevT = 0;
 float eprev = 0;
 float eintegral = 0;
+//int target = 0; //explore gloabal target to let it move
 
 void readEncoder(){
   int b = digitalRead(encoder1pinB);
@@ -87,7 +88,8 @@ void setup() {
 
 void loop() {
   //target position -> 700 encoder ticks should give a one full rotation
-  int target = 700;
+  /**/
+  int target = 0; //made target global for moving target
   
   float diff = abs(target-position);
   readEncoder();
@@ -138,6 +140,5 @@ void loop() {
   Serial.print(" ");
   Serial.print(position);
   Serial.println();
-
 }
 
