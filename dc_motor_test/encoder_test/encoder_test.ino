@@ -96,7 +96,7 @@ void loop() {
   
   //PID Constants
   float kp = 1;
-  float kd = 0;
+  float kd = 0.025;
   float ki = 0;
 
   //time difference
