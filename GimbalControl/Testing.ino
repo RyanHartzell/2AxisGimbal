@@ -1,31 +1,25 @@
-void testAll() {
+void testMotors() {
 
   // read serial input in a loop and print received messages
   testSerial();
-
-  // run each motor demo code once
-  if (testDemos == false) {
     
-    // servo demo
-    // servoDemo();
-    // delay(2000);
-    
-    // DC motor demo
-    // TODO
-    //delay(2000);
-
-    // test simple scan
-    simpleScan();
-    delay(5000);
-  }
-  testDemos = true;
+  // servo demo
+  servoDemo();
+  delay(2000);
+  
+  // DC motor demo
+  DCMotorDemo();
+  
 }
 
+/*
+  Read data from the serial and repeat the received message back
+*/
 void testSerial() {
-  // read data from serial
-  boolean readMsg = readSerial();
-  // print received data
+  
+  readSerial();
   showNewData();
+  
 }
 
 void servoDemo() {
@@ -58,4 +52,32 @@ void servoDemo() {
   servoMoveTo(0);
 }
 
-// TODO: DC motor test demo
+/*
+  Test the DC motor control
+  (DCMotorControlLoop must be called in the main loop() function to work)
+
+  1. Move to 0 degrees
+  2. Move to 180 degrees
+  3. Move to 360 degrees (same as 0)
+  4. Move to -90 degrees (go backwards)
+  5. Move to 0 degrees
+  
+  Two second delay between each command
+*/
+void DCMotorDemo() {
+
+  DCMoveTo(0);
+  delay(2000);
+
+  DCMoveTo(180);
+  delay(2000);
+
+  DCMoveTo(360);
+  delay(2000);
+
+  DCMoveTo(-90);
+  delay(2000);
+
+  DCMoveTo(0);
+
+}

@@ -1,7 +1,20 @@
+const byte numChars = 32;
+//// not done // char msg[numChars] declared in GimbalControl.ino
+char msg[numChars];   // an array to store the data received from serial
+boolean newData = false;
+
+/*
+  Set up the serial communication
+*/
+void setupSerial() {
+  Serial.begin(9600);
+  Serial.println("<Arduino is ready>");
+}
+
 /*
   Read in several characters from serial
 */
-boolean readSerial() {
+char* readSerial() {
     static byte ndx = 0;
     char endMarker = '\n';
     char rc;
@@ -20,7 +33,7 @@ boolean readSerial() {
             msg[ndx] = '\0'; // terminate the string
             ndx = 0;
             newData = true;
-            return true;
+            return msg;
         }
     }
 }
