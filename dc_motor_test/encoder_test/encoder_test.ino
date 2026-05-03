@@ -11,7 +11,7 @@ int position = 0;
 long prevT = 0;
 float eprev = 0;
 float eintegral = 0;
-//int target = 0; //explore gloabal target to let it move
+int target = 0; //explore gloabal target to let it move
 
 void readEncoder(){
   int b = digitalRead(encoder1pinB);
@@ -86,10 +86,18 @@ void setup() {
   analogWrite(pwmPin, speed);
 }
 
+int loop_count = 0;
+
 void loop() {
   //target position -> 700 encoder ticks should give a one full rotation
   /**/
-  int target = 0; //made target global for moving target
+  //int target = 0; //made target global for moving target
+
+  loop_count++;
+
+  if (loop_count % 1000 == 0) {
+    target = target + 200;
+  }
   
   float diff = abs(target-position);
   readEncoder();

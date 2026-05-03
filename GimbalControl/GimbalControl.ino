@@ -38,44 +38,91 @@ void setup() {
 
 }
 
+int main_loop_count = 0;
+bool loc_switch = false;
+bool once = true;
+bool twice = true;
+
 void loop() {
 
-  //testSerial(); // listen for serial input, repeat back received messages in serial
+  // testSerial(); // listen for serial input, repeat back received messages in serial
+  // testMotors(); // test serial, servo, and dc motor ///////// need to uncomment DCMotorControlLoop //////////
 
-  char* msg = readSerial();
+  // char* msg = readSerial();
+
+  // loop_count++;
+
 
   // continually control the DC motor since it uses PID control to reach a target position
   DCMotorControlLoop();
 
-  // testing command
-  if (strcmp(msg, "T") == 0) {
-    testMotors();
+  main_loop_count++;
+
+  if (once) {
+    DCMoveTo(180);
+    once = false;
+    Serial.println("Set to 90");
   }
-  // simple scan command
-  else if (strcmp(msg, "S") == 0) {
-    simpleScan();
-  }
-  // reset motors command
-  else if (strcmp(msg, "R") == 0) {
-    resetMotors();
+  else if (main_loop_count < 8000 && twice) {
+    stopMotor();
+    twice = false;
+    Serial.println("Stopped");
   }
 
-  // TODO: servo/dc command reading might be sketchy, need to test
+  // if (loop_count < 100000) {
+  //   if (loop_count % 5000 == 0) {
+  //     Serial.print("Loop count = ");
+  //     Serial.println(loop_count);
+  //     if (loc_switch) {
+  //       DCMoveTo(0);
+  //       loc_switch = !loc_switch;
+        
+  //       Serial.println("DCMoveTo 0"); // DEBUG
+  //     }
+  //     else {
+  //       DCMoveTo(90);
+  //       loc_switch = !loc_switch;
 
-  // set servo/elevation angle commands: i.e. "servo 90", "el 35"
-  else if (strcmp(msg, "servo", strlen("servo")) == 0) {
-    servoMoveTo( atoi( msg[strlen("servo") : [strlen(msg)-1])); // convert rest of string to an int, send as motor command
-  }
-  else if (strcmp(msg, "el", strlen("el")) == 0) {
-    servoMoveTo( atoi( msg[strlen("el") : [strlen(msg)-1]));
-  }
-  // set dc/azimuth angle commands: i.e. "dc 270", "az 10"
-  else if (strcmp(msg, "dc", strlen("dc")) == 0) {
-    DCMoveTo( atoi( msg[strlen("dc") : [strlen(msg)-1]));
-  }
-  else if (strcmp(msg, "az", strlen("az")) == 0) {
-    DCMoveTo( atoi( msg[strlen("az") : [strlen(msg)-1]));
-  }
+  //       Serial.println("DCMoveTo 90"); // DEBUG
+  //     }
+  //   }
+  // }
+  // else {
+  //   if (once) {
+  //     DCMoveTo(0);
+  //     once = false;
+  //   }
+  // }
+
+  // // testing command
+  // if (strcmp(msg, "T") == 0) {
+  //   testMotors();
+  // }
+  // // simple scan command
+  // else if (strcmp(msg, "S") == 0) {
+  //   simpleScan();
+  // }
+  // // reset motors command
+  // else if (strcmp(msg, "R") == 0) {
+  //   resetMotors();
+  // }
+
+  // // TODO: servo/dc command reading might be sketchy, need to test
+
+  // // set servo/elevation angle commands: i.e. "servo 90", "el 35"
+  // else if (strcmp(msg, "servo", strlen("servo")) == 0) {
+  //   servoMoveTo( atoi( msg[strlen("servo") : [strlen(msg)-1])); // convert rest of string to an int, send as motor command
+  // }
+  // else if (strcmp(msg, "el", strlen("el")) == 0) {
+  //   servoMoveTo( atoi( msg[strlen("el") : [strlen(msg)-1]));
+  // }
+  // // set dc/azimuth angle commands: i.e. "dc 270", "az 10"
+  // else if (strcmp(msg, "dc", strlen("dc")) == 0) {
+  //   DCMoveTo( atoi( msg[strlen("dc") : [strlen(msg)-1]));
+  // }
+  // else if (strcmp(msg, "az", strlen("az")) == 0) {
+  //   DCMoveTo( atoi( msg[strlen("az") : [strlen(msg)-1]));
+  // }
 
 }
 
