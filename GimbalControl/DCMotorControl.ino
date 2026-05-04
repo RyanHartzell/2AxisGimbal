@@ -25,8 +25,8 @@ const int pwmPin = -1; // to prevent compile errors, not actually used for pcb
 /*
   PWM command limits
 */
-int minPWM = 300;
-int maxPWM = 500;
+int minPWM = 300; // 30;
+int maxPWM = 500; // 120;
 
 // if the motor should be able to move
 bool drive = true;
@@ -67,8 +67,8 @@ void setupDCMotor() {
   attachInterrupt(digitalPinToInterrupt(encoder1pinA), readEncoder, CHANGE); //interrupt port 0 connected to digital pin 2
 
   if (pcb) { // code for the PCB
-    pinMode(forwardPin,OUTPUT);
-    pinMode(backwardPin,OUTPUT);
+    pinMode(forwardPin, OUTPUT);
+    pinMode(backwardPin, OUTPUT);
   }
   else { // code for motor drive L239D breadboard test
     // Setup motor control pins
