@@ -5,10 +5,10 @@
 */
 // motor rest/starting positions
 int sStart = 90;
-int dcStart = 0; // TODO: check against final dc motor implementation
+int dcStart = 0;
 // motor end positions during scan
 int sEnd = 0;
-int dcEnd = 360; // TODO: check against final dc motor implementation
+int dcEnd = 360;
 
 /*
   Mapping variables
@@ -19,8 +19,8 @@ int dcEnd = 360; // TODO: check against final dc motor implementation
 */
 int sfovBuffer = 15; // adjust servo scan from [0, 90] to [0+buffer, 90-buffer]  // need at least some small buffer to avoid servo getting degree commands on the edge of its range and wrapping them to the other side
 // TODO: can add a dcfovBuffer if desired (would need to update simpleScan())
-int scanDelay = 42; // ms delay between motor movements during scan // 24 fps = 42 positions per second -> 1000 / 24 = 41.667 ms at each position
-int sScanInc = 10; // move the servo 10 degrees at a time during scans
+int scanDelay = 50; // ms delay between motor movements during scan ////// 24 fps = 42 positions per second -> 1000 / 24 = 41.667 ms at each position
+int sScanInc = 20; // move the servo 10 degrees at a time during scans
 int dcScanInc = 30; // move the dc motor 30 degrees at a time during scans
 
 
@@ -45,84 +45,76 @@ bool twice = true;
 
 void loop() {
 
+  //// uncomment for testing //// comment everything else in loop
   // testSerial(); // listen for serial input, repeat back received messages in serial
-  // testMotors(); // test serial, servo, and dc motor ///////// need to uncomment DCMotorControlLoop //////////
+  // testMotors(); // test servo and dc motor
+  // delay(10000);
+  ///////////////////////////////
 
-  // char* msg = readSerial();
-
-  // loop_count++;
-
+  char* msg = readSerial();
+  showNewData();
 
   // continually control the DC motor since it uses PID control to reach a target position
   DCMotorControlLoop();
 
-  main_loop_count++;
-
-  if (once) {
-    DCMoveTo(180);
-    once = false;
-    Serial.println("Set to 90");
+  // testing command
+  if (strcmp(msg, "T") == 0) {
+    Serial.println("Testing motors.");
+    testMotors();
   }
-  else if (main_loop_count < 8000 && twice) {
+  // simple scan command
+  else if (strcmp(msg, "M") == 0) {
+    Serial.println("Running simpleScan.");
+    simpleScan();
+  }
+  // reset motors command
+  else if (strcmp(msg, "R") == 0) {
+    Serial.println("Reseting motors.");
+    resetMotors();
+  }
+  // stop motors command
+  else if (strcmp(msg, "S") == 0) {
+    Serial.println("Stopping motors.");
     stopMotor();
-    twice = false;
-    Serial.println("Stopped");
   }
 
-  // if (loop_count < 100000) {
-  //   if (loop_count % 5000 == 0) {
-  //     Serial.print("Loop count = ");
-  //     Serial.println(loop_count);
-  //     if (loc_switch) {
-  //       DCMoveTo(0);
-  //       loc_switch = !loc_switch;
-        
-  //       Serial.println("DCMoveTo 0"); // DEBUG
-  //     }
-  //     else {
-  //       DCMoveTo(90);
-  //       loc_switch = !loc_switch;
+  // TODO: servo/dc command reading might be sketchy, need to test
 
-  //       Serial.println("DCMoveTo 90"); // DEBUG
-  //     }
-  //   }
-  // }
-  // else {
-  //   if (once) {
-  //     DCMoveTo(0);
-  //     once = false;
-  //   }
-  // }
+  // set servo/elevation angle commands: i.e. "servo 90", "el 35"
+  else if (strncmp(msg, "servo", strlen("servo")) == 0) {
+    servoMoveTo( atoi(msg + strlen("servo")) ); // convert rest of string to an int, send as motor command
+  }
+  else if (strncmp(msg, "el", strlen("el")) == 0) {
+    servoMoveTo( atoi(msg + strlen("el")) );
+  }
+  // set dc/azimuth angle commands: i.e. "dc 270", "az 10"
+  else if (strncmp(msg, "dc", strlen("dc")) == 0) {
+    DCMoveTo( atoi(msg + strlen("dc")) );
+  }
+  else if (strncmp(msg, "az", strlen("az")) == 0) {
+    DCMoveTo( atoi(msg + strlen("az")) );
+  }
+  // print dc encoder count command
+  else if (strcmp(msg, "enc") == 0) {
+    Serial.print("DC encoder counts = ");
+    Serial.println(getEncoderCount());
+  }
 
-  // // testing command
-  // if (strcmp(msg, "T") == 0) {
-  //   testMotors();
-  // }
-  // // simple scan command
-  // else if (strcmp(msg, "S") == 0) {
-  //   simpleScan();
-  // }
-  // // reset motors command
-  // else if (strcmp(msg, "R") == 0) {
-  //   resetMotors();
-  // }
+}
 
-  // // TODO: servo/dc command reading might be sketchy, need to test
+/*
+  Run DCMotorControlLoop() until the input time has passed
+  Used in place of a delay so DC motor control will still work
 
-  // // set servo/elevation angle commands: i.e. "servo 90", "el 35"
-  // else if (strcmp(msg, "servo", strlen("servo")) == 0) {
-  //   servoMoveTo( atoi( msg[strlen("servo") : [strlen(msg)-1])); // convert rest of string to an int, send as motor command
-  // }
-  // else if (strcmp(msg, "el", strlen("el")) == 0) {
-  //   servoMoveTo( atoi( msg[strlen("el") : [strlen(msg)-1]));
-  // }
-  // // set dc/azimuth angle commands: i.e. "dc 270", "az 10"
-  // else if (strcmp(msg, "dc", strlen("dc")) == 0) {
-  //   DCMoveTo( atoi( msg[strlen("dc") : [strlen(msg)-1]));
-  // }
-  // else if (strcmp(msg, "az", strlen("az")) == 0) {
-  //   DCMoveTo( atoi( msg[strlen("az") : [strlen(msg)-1]));
-  // }
+  @param waitTime [int] time to 'delay' in milliseconds
+*/
+void waitUntilReady(int waitTime) {
+
+  unsigned long startT = millis();
+
+  while ((millis() - startT) < waitTime) { // while the time passed is less than waitTime
+    DCMotorControlLoop();
+  }
 
 }
 
@@ -164,35 +156,47 @@ void simpleScan() {
 
     // scan the servo up at the current az coordinate
     while (sDegree >= sEnd + sfovBuffer) {
-      Serial.print("First loop servo degree: ");
-      Serial.println(sDegree);
+      // Serial.print("First loop servo degree: ");
+      // Serial.println(sDegree);
       // move servo a small amount, pause to ensure a good camera read, continue scan
       servoMoveTo(sDegree);
       sDegree -= sScanInc;
-      delay(scanDelay);
+      // delay(scanDelay);
+      waitUntilReady(scanDelay);
     }
     sDegree += sScanInc; // set servo command back in range
 
     // TODO: may need to tune the dc scan increment and/or make a separate dc scan delay to ensure dc motor has enough time to get to the target position
     // move to the next az coordinate
     dcDegree += dcScanInc;
+
+    Serial.print("SS first loop dcDegree = ");
+    Serial.println(dcDegree);
+
     DCMoveTo(dcDegree);
-    delay(scanDelay);
+    // delay(scanDelay);
+    waitUntilReady(scanDelay);
 
     // scan the servo down at the current az coordinate
     while (sDegree <= sStart - sfovBuffer) {
-      Serial.print("Second loop servo degree: ");
-      Serial.println(sDegree);
+      // Serial.print("Second loop servo degree: ");
+      // Serial.println(sDegree);
       // move servo a small amount, pause to ensure a good camera read, continue scan
       servoMoveTo(sDegree);
       sDegree += sScanInc;
-      delay(scanDelay);
+      // delay(scanDelay);
+      waitUntilReady(scanDelay);
     }
 
     // move to the next az coordinate
     dcDegree += sScanInc;
+
+    Serial.print("SS second loop dcDegree = ");
+    Serial.println(dcDegree);
+
     DCMoveTo(dcDegree);
-    delay(scanDelay);
+    // delay(scanDelay);
+    waitUntilReady(scanDelay);
     // if moved to 360 and returned to start, loop will end here so the scan of the starting position will not be repeated
   
   }
@@ -206,6 +210,8 @@ void resetMotors() {
 
   // reset motors to center position
   servoMoveTo(sStart);
-  DCResetMotor(); // hardcoded with the center position = 0/360
+  DCResetMotor(); // hardcoded with reset position 0 / 360
+  waitUntilReady(1000); // should be long enough for DC motor to finish resetting
+  resetEncoder(); // reset dc encoders
 
 }

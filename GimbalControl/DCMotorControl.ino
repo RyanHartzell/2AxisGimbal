@@ -14,6 +14,11 @@ const int forwardPin = 8;
 const int backwardPin = 12; 
 const int pwmPin = 10;
 
+int minPWM = 35;
+int maxPWM = 130;
+
+bool drive = true;
+
 /*
   PID controller variables
 */
@@ -21,14 +26,16 @@ float kp = 0.8; //1;
 float kd = 0.05; //0.025;
 float ki = 0; //0;
 
-int encPosition = 0; // updated in DCMotorControlLoop by readEncoders
+int errorThreshold = 10;
+
+int encPosition = 0; // updated by readEncoders during interrupts
 long prevT = 0;
 float eprev = 0;
 float eintegral = 0;
 
 int encTarget = 0; // in encoder ticks, 700 encoder ticks should give a one full rotation
 
-int encCountsPerRev = 700; // number of encoder counts in one full motor rotation
+int encCountsPerRev = 1400; // number of encoder counts in one full motor rotation
 
 boolean Direction = true;
 int encoder1PinALast = 0;
@@ -38,9 +45,7 @@ void setupDCMotor() {
   // set up encoder pins
   // pinMode(encoder1pinA, INPUT); // testing commented out
   pinMode(encoder1pinB, INPUT); // testing commented out
-  //attachInterrupt(digitalPinToInterrupt(encoder1pinA), readEncoder, RISING);
-  // pinMode(encoder1pinB,INPUT);
-  attachInterrupt(digitalPinToInterrupt(2), readEncoder, CHANGE); //interrupt port 0 connected to digital pin 2
+  attachInterrupt(digitalPinToInterrupt(encoder1pinA), readEncoder, CHANGE); //interrupt port 0 connected to digital pin 2
 
   // Setup motor control pins
   pinMode(forwardPin, OUTPUT);
@@ -61,27 +66,49 @@ void setupDCMotor() {
 */
 void DCMoveTo(int degree) {
 
-  // TODO: want to ensure motor has reached the last target first?
-      // would probably have to add a loop with a delay to check if target is reached yet and only update the target after it is reached (or after a certain number of loops)
-      // could also be fine this way as long as the motor is given enough time to get to the target or at least close enough for the camera reading
-  // reset encTarget to current position in case motor has not reached previous target
-  // readEncoder();
-  encTarget = encPosition;
+  // allow the motor to drive
+  drive = true;
 
+  // Serial.print("Start of DCMoveTo: ----- degree = ");
+  // Serial.println(degree);
+  
+  //encTarget = encPosition;
+
+  // Serial.print("In DCMoveTo: encPosition = ");
+  // Serial.println(encPosition);
+
+  // TODO: need?
   // if (encPosition > 99999) {
-  //   // reset encoder counts and encTarget to avoid them getting too larger
+  //   // reset encoder counts and encTarget to avoid them getting too large? modded in function so it should keep global position the same
   //   resetEncoder();
   // }
   
   // convert where motor is currently to degrees
   int wrappedEncPos = encPosition % (encCountsPerRev + 1); // only care about position on the circle, not number of rotations completed
-  int currDegreePos = wrappedEncPos * (360 / encCountsPerRev);
+  int currDegreePos = wrappedEncPos * (360.0 / encCountsPerRev);
+
+  // Serial.print("In DCMoveTo: wrappedEncPos = ");
+  // Serial.println(wrappedEncPos);
+  // Serial.print("In DCMoveTo: currDegreePos = ");
+  // Serial.println(currDegreePos);
+
+
 
   // calculate degree distance between current position and target position
   int degreesToMove = degree - currDegreePos;
 
+  // TODO: make motor take the shortest path instead of enforcing positive degree = forward and negative degree = backwards?
+  // TOOD: motor struggles to be accurate when the command is the same position over and over again, probably related to above ^^
+
+  // Serial.print("In DCMoveTo: degreesToMove = ");
+  // Serial.println(degreesToMove);
+  
+
   // convert degree target to encoder counts
-  int newEncTarget = degreesToMove * (encCountsPerRev / 360);
+  int newEncTarget = degreesToMove * (encCountsPerRev / 360.0);
+
+  // Serial.print("In DCMoveTo: newEncTarget = ");
+  // Serial.println(newEncTarget);
 
   // add new target to encTarget (encoder counts do not reset each revolution, so target cannot simply be set to a value [0,700])
     // if degree input was negative, encTarget will decrease and motor will go backwards
@@ -89,9 +116,9 @@ void DCMoveTo(int degree) {
 
   // DCMotorControlLoop will handle moving the motor to the target with PID control
 
-  Serial.print("Inside DCMoveTo: degree = ");
+  Serial.print("DCMoveTo: degrees = ");
   Serial.print(degree);
-  Serial.print("   encTarget = ");
+  Serial.print("  encTarget = ");
   Serial.println(encTarget);
 
 }
@@ -102,9 +129,12 @@ void DCMoveTo(int degree) {
 */
 void DCResetMotor() {
 
+  // allow the motor to drive
+  drive = true;
+
   // convert where motor is currently to degrees
   int wrappedEncPos = encPosition % (encCountsPerRev + 1); // only care about position on the circle, not number of rotations completed
-  int currDegreePos = wrappedEncPos * (360 / encCountsPerRev);
+  int currDegreePos = wrappedEncPos * (360.0 / encCountsPerRev);
 
   // if the motor is at or past 180 degrees, command to move to 360 to complete the forward rotation
   if (currDegreePos >= 180) {
@@ -124,6 +154,7 @@ int loop_count = 0; // DEBUG
 */
 void DCMotorControlLoop() {
 
+  if (!drive) { return; } // only try and drive the motor if the motor wasn't stopped by a command
   // readEncoder();
 
   // calculate time difference
@@ -136,14 +167,6 @@ void DCMotorControlLoop() {
   // calculate error
   int e = encTarget - encPosition; // may need to switch sign on error term (target - position) if control isn't working
 
-  // encoder counts just keep going after the motor stops?
-  // if (abs(e) > 5000) {
-  //   StopMotor();
-  //   ResetEncoder();
-  // }
-
-
-
   // error derivative
   float dedt = (e - eprev) / deltaT; // finite difference approximation
 
@@ -155,35 +178,33 @@ void DCMotorControlLoop() {
 
   // convert to motor power
   float pwr = fabs(u); // floating point absolute value
-  if (pwr > 255) { // limit to max power
-    pwr = 255;
+  if (pwr > maxPWM) { // limit to max power
+    pwr = maxPWM;
+  }
+  else if (pwr < minPWM) { // limit to min power that actually moves the motor
+    pwr = minPWM;
   }
 
-  if (loop_count % 5000 == 0) { // DEBUG
-    Serial.print("In DC loop: encTarget = ");
-    Serial.print(encTarget);
-    Serial.print(" encPosition = ");
-    Serial.print(encPosition);
-    Serial.print(" error = ");
-    Serial.print(e);
-    Serial.print("   power command: ");
-    Serial.println(pwr);
-  }
+  // DEBUGGING: print statements make the loop not get called as often, need to take out for final tuning and actual performance
+  // if (loop_count % 90000 == 0) {
+  //   Serial.print("In DC loop: encTarget = ");
+  //   Serial.print(encTarget);
+  //   Serial.print(" encPosition = ");
+  //   Serial.print(encPosition);
+  //   Serial.print(" error = ");
+  //   Serial.print(e);
+  //   Serial.print("   power command: ");
+  //   Serial.println(pwr);
+  // }
 
   bool forward = true;
   if (u < 0) {
     forward = false;
   }
 
-   // TESTING //
-  int min_pwr = 35;
-  if (pwr < min_pwr) { // (pwr < 60) // limit to min power that actually moves the motor
-    pwr = min_pwr;
-  }
-
   // TESTING //
   // if the error is small enough, don't try and correct it
-  if (abs(e) < 20) { pwr = 0; encTarget = encPosition; }
+  if (abs(e) < errorThreshold) { pwr = 0; }//encTarget = encPosition; }
 
   // drive the motor
   driveMotor(pwr, forward);
@@ -225,8 +246,12 @@ void readEncoder() {
 }
 
 void resetEncoder() {
-  encTarget = 0;
-  encPosition = 0;
+  encPosition = 0; //encPosition % (encCountsPerRev + 1);
+  encTarget = encPosition;
+}
+
+int getEncoderCount() {
+  return encPosition;
 }
 
 void driveMotor(int power, bool forward) {
@@ -257,6 +282,8 @@ void stopMotor() {
   digitalWrite(forwardPin, HIGH);
   digitalWrite(backwardPin, HIGH);
   analogWrite(pwmPin, 0);
+
+  drive = false;
 
 }
 

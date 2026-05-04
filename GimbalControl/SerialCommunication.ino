@@ -8,7 +8,16 @@ boolean newData = false;
 */
 void setupSerial() {
   Serial.begin(9600);
+
+  // small delay to let serial connect
+  delay(700);
+
+  Serial.println();
+  Serial.println();
   Serial.println("<Arduino is ready>");
+  Serial.println();
+  Serial.println();
+
 }
 
 /*
@@ -19,14 +28,14 @@ char* readSerial() {
     char endMarker = '\n';
     char rc;
     
-    while (Serial.available() > 0 && newData == false) { // loop while the serial is avaialable until message is finished
+    while (Serial.available() > 0 ) { //&& newData == false) { // loop while the serial is avaialable until message is finished
         rc = Serial.read();
 
-        if (rc != endMarker) { // overwrites the last character if the message is too long
+        if (rc != endMarker) { // overwrites the message buffer if the message is too long
             msg[ndx] = rc;
             ndx++;
             if (ndx >= numChars) {
-                ndx = numChars - 1;
+                ndx = 0;
             }
         }
         else {

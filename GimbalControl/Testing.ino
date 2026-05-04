@@ -1,7 +1,4 @@
 void testMotors() {
-
-  // read serial input in a loop and print received messages
-  testSerial();
     
   // servo demo
   servoDemo();
@@ -49,7 +46,7 @@ void servoDemo() {
   servoMoveTo(-30);
   delay(1000);
 
-  servoMoveTo(0);
+  servoMoveTo(90);
 }
 
 /*
@@ -67,17 +64,28 @@ void servoDemo() {
 void DCMotorDemo() {
 
   DCMoveTo(0);
-  delay(2000);
+  waitUntilReady(3000);
+  Serial.print("Encoder counts after 0 = ");
+  Serial.println(getEncoderCount());
 
   DCMoveTo(180);
-  delay(2000);
+  waitUntilReady(3000);
+  Serial.print("Encoder counts after 180 = ");
+  Serial.println(getEncoderCount());
 
   DCMoveTo(360);
-  delay(2000);
+  waitUntilReady(3000);
+  Serial.print("Encoder counts after 360 = ");
+  Serial.println(getEncoderCount());
 
   DCMoveTo(-90);
-  delay(2000);
+  waitUntilReady(3000);
+  Serial.print("Encoder counts after -90 = ");
+  Serial.println(getEncoderCount());
 
   DCMoveTo(0);
+  waitUntilReady(3000);
+  Serial.print("Encoder counts after 0 = ");
+  Serial.println(getEncoderCount());
 
 }
