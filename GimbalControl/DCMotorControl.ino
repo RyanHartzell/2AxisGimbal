@@ -1,45 +1,64 @@
-#include <Encoder.h>
+/*
+  FIT0186 DC 12V Motor
+
+  https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/2523/FIT0186_Web.pdf
+*/
 
 /*
   Motor pins
 */
 const byte encoder1pinA = 2; // A pin -> the interrupt pin 2
 const byte encoder1pinB = 4; // B pin -> the digital pin 4
+//// PCB ////
+bool pcb = true;
+const int forwardPin = 10;
+const int backwardPin = 11;
+const int pwmPin = -1; // to prevent compile errors, not actually used for pcb
+/////////////
+//// Motor drive L239D (breadboard test) ////
+// bool pcb = false;
+// const int forwardPin = 8;
+// const int backwardPin = 12; 
+// const int pwmPin = 10;
+/////////////////////////////////////////////
 
-long oldPosition  = -999;
-Encoder myEnc(encoder1pinA, encoder1pinB);
+/*
+  PWM command limits
+*/
+int minPWM = 300;
+int maxPWM = 500;
 
-// Motor drive L239D
-const int forwardPin = 8;
-const int backwardPin = 12; 
-const int pwmPin = 10;
-
-int minPWM = 35;
-int maxPWM = 130;
-
+// if the motor should be able to move
 bool drive = true;
+
+// motor direction
+boolean Direction = true;
+int encoder1PinALast = 0;
 
 /*
   PID controller variables
 */
-float kp = 0.8; //1;
+float kp = 0.7; //1;
 float kd = 0.05; //0.025;
 float ki = 0; //0;
 
-int errorThreshold = 10;
-
-int encPosition = 0; // updated by readEncoders during interrupts
 long prevT = 0;
 float eprev = 0;
 float eintegral = 0;
 
-int encTarget = 0; // in encoder ticks, 700 encoder ticks should give a one full rotation
+// error tolerance for the position target
+int errorThreshold = 10;
+// current position in encoder counts
+int encPosition = 0; // updated by readEncoders during interrupts
+// target position in encoder counts
+int encTarget = 0;
+// number of encoder counts in one full motor rotation
+int encCountsPerRev = 1400;
 
-int encCountsPerRev = 1400; // number of encoder counts in one full motor rotation
 
-boolean Direction = true;
-int encoder1PinALast = 0;
-
+/*
+  Set up motor pins and encoder interrupt
+*/
 void setupDCMotor() {
 
   // set up encoder pins
@@ -47,14 +66,20 @@ void setupDCMotor() {
   pinMode(encoder1pinB, INPUT); // testing commented out
   attachInterrupt(digitalPinToInterrupt(encoder1pinA), readEncoder, CHANGE); //interrupt port 0 connected to digital pin 2
 
-  // Setup motor control pins
-  pinMode(forwardPin, OUTPUT);
-  pinMode(backwardPin, OUTPUT);
+  if (pcb) { // code for the PCB
+    pinMode(forwardPin,OUTPUT);
+    pinMode(backwardPin,OUTPUT);
+  }
+  else { // code for motor drive L239D breadboard test
+    // Setup motor control pins
+    pinMode(forwardPin, OUTPUT);
+    pinMode(backwardPin, OUTPUT);
 
-  // Configure to spin forward, set speed to 0
-  digitalWrite(forwardPin, HIGH);
-  digitalWrite(backwardPin, LOW);
-  analogWrite(pwmPin, 0);
+    // Configure to spin forward, set speed to 0
+    digitalWrite(forwardPin, HIGH);
+    digitalWrite(backwardPin, LOW);
+    analogWrite(pwmPin, 0);
+  }
 
 }
 
@@ -137,17 +162,18 @@ void DCResetMotor() {
   int currDegreePos = wrappedEncPos * (360.0 / encCountsPerRev);
 
   // if the motor is at or past 180 degrees, command to move to 360 to complete the forward rotation
-  if (currDegreePos >= 180) {
-    DCMoveTo(360);
+  if (currDegreePos < 180) {
+    DCMoveTo(0);
   }
   // if the motor is at less than 180 degrees, command to move to 0 to move backwards
   else {
-    DCMoveTo(0);
+    DCMoveTo(-360);
   }
 
 }
 
 int loop_count = 0; // DEBUG
+
 /*
   Move the DC motor to the target position using PID control
   Must be called in the program's main loop() function
@@ -155,14 +181,11 @@ int loop_count = 0; // DEBUG
 void DCMotorControlLoop() {
 
   if (!drive) { return; } // only try and drive the motor if the motor wasn't stopped by a command
-  // readEncoder();
 
   // calculate time difference
   long currT = micros();
   float deltaT = ((float)(currT - prevT)) / 1.0e6; // microsecond precision
   prevT = currT;
-
-  // readEncoder();
 
   // calculate error
   int e = encTarget - encPosition; // may need to switch sign on error term (target - position) if control isn't working
@@ -186,16 +209,16 @@ void DCMotorControlLoop() {
   }
 
   // DEBUGGING: print statements make the loop not get called as often, need to take out for final tuning and actual performance
-  // if (loop_count % 90000 == 0) {
-  //   Serial.print("In DC loop: encTarget = ");
-  //   Serial.print(encTarget);
-  //   Serial.print(" encPosition = ");
-  //   Serial.print(encPosition);
-  //   Serial.print(" error = ");
-  //   Serial.print(e);
-  //   Serial.print("   power command: ");
-  //   Serial.println(pwr);
-  // }
+  if (loop_count % 90000 == 0) {
+    Serial.print("In DC loop: encTarget = ");
+    Serial.print(encTarget);
+    Serial.print(" encPosition = ");
+    Serial.print(encPosition);
+    Serial.print(" error = ");
+    Serial.print(e);
+    Serial.print("   power command: ");
+    Serial.println(pwr);
+  }
 
   bool forward = true;
   if (u < 0) {
@@ -204,7 +227,7 @@ void DCMotorControlLoop() {
 
   // TESTING //
   // if the error is small enough, don't try and correct it
-  if (abs(e) < errorThreshold) { pwr = 0; }//encTarget = encPosition; }
+  if (abs(e) < errorThreshold) { pwr = 0; } //encTarget = encPosition; }
 
   // drive the motor
   driveMotor(pwr, forward);
@@ -215,15 +238,6 @@ void DCMotorControlLoop() {
 }
 
 void readEncoder() {
-
-  //// from pid controller code ////
-  // int b = digitalRead(encoder1pinB);
-  
-  // if (b>0) { encPosition++; }
-  // else { encPosition--; }
-
-  //// TEST using encoder.h library ////
-  //encPosition = myEnc.read();
 
   int Lstate = digitalRead(encoder1pinA);
   if((encoder1PinALast == LOW) && Lstate==HIGH)
@@ -256,50 +270,89 @@ int getEncoderCount() {
 
 void driveMotor(int power, bool forward) {
   
-  if (power <= 0) {
-    stopMotor();
+  if(pcb) { // code for pcb
+
+    if(power <= 0)
+    {
+      stopMotor();
+    }
+    else
+    {    
+      if (forward) {
+        moveForward(power);
+      }
+      else { // backwards
+        moveBackward(power);
+      }
+    }
   }
-  else {
-  
-    if (forward) {
+  else { // code for motor drive L239D breadboard test
 
-      moveForward(); // modulate direction pins to go forward
-      analogWrite(pwmPin, power);
-
+    if (power <= 0) {
+      stopMotor();
     }
     else {
+    
+      if (forward) {
 
-      moveBackward(); // modulate direction pins to go backward
-      analogWrite(pwmPin, power);
+        _moveForward(); // modulate direction pins to go forward
+        analogWrite(pwmPin, power);
 
+      }
+      else {
+
+        _moveBackward(); // modulate direction pins to go backward
+        analogWrite(pwmPin, power);
+
+      }
     }
   }
 }
 
 void stopMotor() {
 
-  // brake motors
-  digitalWrite(forwardPin, HIGH);
-  digitalWrite(backwardPin, HIGH);
-  analogWrite(pwmPin, 0);
-
   drive = false;
-
+  
+  if (pcb) { // code for pcb
+    // ensure power is 0
+    moveForward(0);
+    moveBackward(0);
+    // stop motor
+    digitalWrite(forwardPin, LOW);
+    digitalWrite(backwardPin, LOW);
+  }
+  else { // code for motor drive L239D breadboard test
+    // stop motor
+    digitalWrite(forwardPin, HIGH);
+    digitalWrite(backwardPin, HIGH);
+    analogWrite(pwmPin, 0);
+  }
 }
 
-void moveForward() {
+void moveForward(int power) {
 
-  // spin forward
+  digitalWrite(forwardPin, LOW);
+  analogWrite(backwardPin, power); // modulate reverse pin to go forward
+}
+
+void moveBackward(int power) {
+
+  digitalWrite(backwardPin, LOW);
+  analogWrite(forwardPin, power); // modulate forward pin to go backward
+}
+
+
+void _moveForward() { // only for motor drive L239D breadboard test
+  
+   // spin forward
   digitalWrite(forwardPin, HIGH);
   digitalWrite(backwardPin, LOW);
-
 }
 
-void moveBackward() {
+void _moveBackward() { // only used for motor drive L239D breadboard test
 
   // spin backward
   digitalWrite(forwardPin, LOW);
   digitalWrite(backwardPin, HIGH);
-
 }
 

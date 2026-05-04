@@ -57,10 +57,20 @@ void loop() {
   // continually control the DC motor since it uses PID control to reach a target position
   DCMotorControlLoop();
 
-  // testing command
+  // all motor testing command
   if (strcmp(msg, "T") == 0) {
     Serial.println("Testing motors.");
     testMotors();
+  }
+  // DC motor testing command
+  else if (strcmp(msg, "T dc") == 0) {
+    Serial.println("Testing DC motor.");
+    DCMotorDemo();
+  }
+  // servo motor testing command
+  else if (strcmp(msg, "T servo") == 0) {
+    Serial.println("Testing servo motor.");
+    servoDemo();
   }
   // simple scan command
   else if (strcmp(msg, "M") == 0) {
@@ -77,9 +87,6 @@ void loop() {
     Serial.println("Stopping motors.");
     stopMotor();
   }
-
-  // TODO: servo/dc command reading might be sketchy, need to test
-
   // set servo/elevation angle commands: i.e. "servo 90", "el 35"
   else if (strncmp(msg, "servo", strlen("servo")) == 0) {
     servoMoveTo( atoi(msg + strlen("servo")) ); // convert rest of string to an int, send as motor command
@@ -170,8 +177,11 @@ void simpleScan() {
     // move to the next az coordinate
     dcDegree += dcScanInc;
 
-    Serial.print("SS first loop dcDegree = ");
-    Serial.println(dcDegree);
+    // ensure it is within dcEnd
+    if (dcDegree > dcEnd) { dcDegree = dcEnd; }
+
+    // Serial.print("SS first loop dcDegree = ");
+    // Serial.println(dcDegree);
 
     DCMoveTo(dcDegree);
     // delay(scanDelay);
@@ -191,8 +201,11 @@ void simpleScan() {
     // move to the next az coordinate
     dcDegree += sScanInc;
 
-    Serial.print("SS second loop dcDegree = ");
-    Serial.println(dcDegree);
+    // ensure it is within dcEnd
+    if (dcDegree > dcEnd) { dcDegree = dcEnd; }
+
+    // Serial.print("SS second loop dcDegree = ");
+    // Serial.println(dcDegree);
 
     DCMoveTo(dcDegree);
     // delay(scanDelay);
